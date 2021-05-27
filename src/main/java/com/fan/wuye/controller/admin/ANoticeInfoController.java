@@ -1,0 +1,163 @@
+package com.fan.wuye.controller.admin;
+
+
+import com.fan.wuye.controller.LoginModel;
+import com.fan.wuye.dao.AdminInfoMapper;
+import com.fan.wuye.dao.NoticeInfoMapper;
+import com.fan.wuye.pojo.AdminInfo;
+import com.fan.wuye.pojo.NoticeInfo;
+import com.fan.wuye.service.NoticeInfoService;
+import com.fan.wuye.util.CommonVal;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.stereotype.Controller;
+
+import org.springframework.ui.ModelMap;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.text.SimpleDateFormat;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+
+@Controller
+@RequestMapping("/admin/notice_info")
+public class ANoticeInfoController {
+    SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
+    @Autowired
+    NoticeInfoService noticeInfoService;
+    @Autowired
+    AdminInfoMapper adminInfoMapper;
+    @Autowired
+    NoticeInfoMapper noticeInfoMapper;
+
+    /**
+     * 返回公告列表jsp页面
+     */
+    @RequestMapping(value = "")
+    public String index(ModelMap modelMap, HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName); //获取当前登录账号信息
+        AdminInfo adminInfo = adminInfoMapper.selectByPrimaryKey(login.getId());
+        modelMap.addAttribute("user", adminInfo);
+
+        return "admin/notice_info/list";
+    }
+
+    /**
+     * 根据查询条件分页查询公告数据,然后返回给前台渲染
+     */
+    @RequestMapping(value = "queryList")
+    @ResponseBody
+    public Object toList(NoticeInfo model, Integer page,
+                         String createTimeOrder, HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName);
+
+        return noticeInfoService.getDataList(createTimeOrder, model, page,
+                CommonVal.pageSize, login); //分页查询数据
+    }
+
+    /**
+     * 进入新增页面
+     */
+    @RequestMapping("add")
+    public String add(ModelMap modelMap, NoticeInfo model,
+                      HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName); //从session中获取当前登录账号
+        modelMap.addAttribute("data", model);
+
+        return "admin/notice_info/add_page";
+    }
+
+    /**
+     * 新增提交信息接口
+     */
+    @RequestMapping("add_submit")
+    @ResponseBody
+    public Object add_submit(NoticeInfo model, ModelMap modelMap,
+                             HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName);
+        Map<String, Object> rs = new HashMap<String, Object>();
+        String msg = noticeInfoService.add(model, login); //执行添加操作
+
+        if (msg.equals("")) {
+            rs.put("code", 1);
+            rs.put("msg",
+                    "添加成功");
+
+            return rs;
+        }
+
+        rs.put("code", 0);
+        rs.put("msg", msg);
+
+        return rs;
+    }
+
+    /**
+     * 进入修改页面
+     */
+    @RequestMapping("update")
+    public String update(ModelMap modelMap, NoticeInfo model,
+                         HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName); //从session中获取当前登录账号
+        NoticeInfo data = noticeInfoMapper.selectByPrimaryKey(model.getId());
+        modelMap.addAttribute("data", data);
+
+        return "admin/notice_info/update_page";
+    }
+
+    /**
+     * 修改提交信息接口
+     */
+    @RequestMapping("update_submit")
+    @ResponseBody
+    public Object update_submit(NoticeInfo model, ModelMap modelMap,
+                                HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName);
+        Map<String, Object> rs = new HashMap<String, Object>();
+        String msg = noticeInfoService.update(model, login); //执行修改操作
+
+        if (msg.equals("")) {
+            rs.put("code", 1);
+            rs.put("msg",
+                    "修改成功");
+
+            return rs;
+        }
+
+        rs.put("code", 0);
+        rs.put("msg", msg);
+
+        return rs;
+    }
+
+    /**
+     * 删除数据接口
+     */
+    @RequestMapping("del")
+    @ResponseBody
+    public Object del(Integer id, ModelMap modelMap, HttpServletRequest request) {
+        LoginModel login = (LoginModel) request.getSession()
+                .getAttribute(CommonVal.sessionName);
+        Map<String, Object> rs = new HashMap<String, Object>();
+        noticeInfoService.delete(id);
+        rs.put("code", 1);
+        rs.put("msg",
+                "删除成功");
+
+        return rs;
+    }
+}
+
